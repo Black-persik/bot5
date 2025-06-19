@@ -23,6 +23,9 @@ main_keyboard = ReplyKeyboardMarkup(
 # Инициализация бота
 application = Application.builder().token(TOKEN).build()
 
+import asyncio
+asyncio.get_event_loop().run_until_complete(application.initialize())
+
 # Обработчики команд (остаются без изменений)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
