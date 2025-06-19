@@ -107,7 +107,7 @@ async def startup():
     await application.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
 
 # Для локальной разработки (опционально)
-if __name__ == "__main__":
-    import uvicorn
-    register_handlers()
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# if __name__ == "__main__":
+#     import uvicorn
+#     register_handlers()
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
