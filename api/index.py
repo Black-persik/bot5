@@ -104,6 +104,7 @@ async def index():
 @app.on_event("startup")
 async def startup():
     register_handlers()
+    await application.initialize()
     await application.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
 
 # Для локальной разработки (опционально)
