@@ -115,4 +115,4 @@ async def startup():
 if __name__ == "__main__":
     import uvicorn
     register_handlers()
-    uvicorn.run(app, host="64.29.17.129", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
