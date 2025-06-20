@@ -48,6 +48,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    print("echo error")
     await update.message.reply_text(
         update.message.text,
         reply_markup=main_keyboard
