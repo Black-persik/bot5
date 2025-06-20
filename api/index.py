@@ -29,6 +29,7 @@ asyncio.get_event_loop().run_until_complete(application.initialize())
 
 # Обработчики команд (остаются без изменений)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    print("error start")
     await update.message.reply_text(
         "Привет! Я первая версия бота для нашего супер проекта про рекомендательные системы",
         reply_markup=main_keyboard,
