@@ -22,6 +22,7 @@ main_keyboard = ReplyKeyboardMarkup(
 
 # Инициализация бота
 application = Application.builder().token(TOKEN).build()
+register_handlers()
 
 import asyncio
 asyncio.get_event_loop().run_until_complete(application.initialize())
@@ -106,7 +107,7 @@ async def index():
 # Инициализация при запуске
 @app.on_event("startup")
 async def startup():
-    register_handlers()
+
     await application.initialize()
     await application.start()
     await application.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
