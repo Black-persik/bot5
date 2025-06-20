@@ -8,10 +8,15 @@ from telegram.ext import (
     ContextTypes,
 )
 import os
+import logging
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Используйте переменные окружения Vercel
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")   # URL вашего Vercel приложения
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 # Клавиатура для главного меню
 main_keyboard = ReplyKeyboardMarkup(
@@ -23,13 +28,8 @@ main_keyboard = ReplyKeyboardMarkup(
 # Инициализация бота
 application = Application.builder().token(TOKEN).build()
 
-
-import asyncio
-asyncio.get_event_loop().run_until_complete(application.initialize())
-
-# Обработчики команд (остаются без изменений)
+# Обработчики команд
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    print("error start")
     await update.message.reply_text(
         "Привет! Я первая версия бота для нашего супер проекта про рекомендательные системы",
         reply_markup=main_keyboard,
@@ -42,13 +42,11 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "/help - основные правила пользования ботом\n"
         "/reload - обновить чат\n"
         "/log_out - выйти из аккаунта\n"
-        "/log_in - войти в аккаунт",
+        "/log_in - войти в аккаунта",
         reply_markup=main_keyboard,
     )
 
-
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    print("echo error")
     await update.message.reply_text(
         update.message.text,
         reply_markup=main_keyboard
@@ -59,18 +57,20 @@ async def reload(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Чат обновлен!",
         reply_markup=main_keyboard
     )
+
 async def log_in(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         "Пройдите регистрацию в боте!",
         reply_markup=main_keyboard
     )
+
 async def log_out(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         "Вы вышли из своего аккаунта",
         reply_markup=main_keyboard
     )
+
 async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # Специальная клавиатура для команды ask
     ask_keyboard = ReplyKeyboardMarkup(
         [["Отмена"]],
         resize_keyboard=True,
@@ -80,8 +80,6 @@ async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Напишите свой запрос! Я постараюсь помочь вам!",
         reply_markup=ask_keyboard
     )
-
-
 
 # Регистрация обработчиков
 def register_handlers():
@@ -109,13 +107,12 @@ async def index():
 # Инициализация при запуске
 @app.on_event("startup")
 async def startup():
+    logger.info("Starting bot...")
+    logger.info(f"TOKEN: {TOKEN}")
+    logger.info(f"WEBHOOK_URL: {WEBHOOK_URL}")
+    
     register_handlers()
-    await application.initialize()
-    await application.start()
-    await application.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
-
-# # Для локальной разработки (опционально)
-# if __name__ == "__main__":
-#     import uvicorn
-#     register_handlers()
-#     uvicorn.run(app, host="127.0.0.1", port=8000)
+    
+    webhook_url = f"{WEBHOOK_URL}/webhook"
+    await application.bot.set_webhook(url=webhook_url)
+    logger.info(f"Webhook set to: {webhook_url}")
