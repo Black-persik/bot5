@@ -22,7 +22,7 @@ main_keyboard = ReplyKeyboardMarkup(
 
 # Инициализация бота
 application = Application.builder().token(TOKEN).build()
-register_handlers()
+
 
 import asyncio
 asyncio.get_event_loop().run_until_complete(application.initialize())
@@ -109,13 +109,13 @@ async def index():
 # Инициализация при запуске
 @app.on_event("startup")
 async def startup():
-
+    register_handlers()
     await application.initialize()
     await application.start()
     await application.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
 
-# Для локальной разработки (опционально)
-if __name__ == "__main__":
-    import uvicorn
-    register_handlers()
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+# # Для локальной разработки (опционально)
+# if __name__ == "__main__":
+#     import uvicorn
+#     register_handlers()
+#     uvicorn.run(app, host="127.0.0.1", port=8000)
