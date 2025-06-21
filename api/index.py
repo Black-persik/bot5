@@ -122,16 +122,10 @@ async def get_gender(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         "current_bundle_version": 0,
         "bundle_version_at_install": 0
     }
-    try:
-        response = requests.post(api_create_user, json=payload_json)
-        if response.status_code == 200:
-            print("добавил в бд")
-            print(chat_id)
-        else:
-            print("не добавил в бд")
-            print(response.text)
-    except Exception as e:
-        print(e)
+        
+    response = requests.post(api_create_user, json=payload_json)
+       
+    
 
     return ConversationHandler.END
 
