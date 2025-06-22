@@ -16,7 +16,7 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")   # URL вашего Vercel прилож�
 application = Application.builder().token(TOKEN).build()
 # Клавиатура для главного меню
 main_keyboard = ReplyKeyboardMarkup(
-    [["/ask", "/help"], ["/reload"], ["/log_in", "/log_out"]],
+    [["/ask", "/help"], ["/reload"]],
     resize_keyboard=True,
     one_time_keyboard=False,
 )
