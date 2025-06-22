@@ -16,7 +16,7 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")   # URL вашего Vercel прилож�
 application = Application.builder().token(TOKEN).build()
 # Клавиатура для главного меню
 main_keyboard = ReplyKeyboardMarkup(
-    [["/ask", "/help"], ["/reload"]],
+    [["/ask", "/help"], ["/reload"], ["/log_in", "/log_out"]],
     resize_keyboard=True,
     one_time_keyboard=False,
 )
@@ -56,7 +56,16 @@ async def reload(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Чат обновлен!",
         reply_markup=main_keyboard
     )
-
+async def log_in(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        "Пройдите регистрацию в боте!",
+        reply_markup=main_keyboard
+    )
+async def log_out(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        "Вы вышли из своего аккаунта",
+        reply_markup=main_keyboard
+    )
 async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Специальная клавиатура для команды ask
     ask_keyboard = ReplyKeyboardMarkup(
@@ -77,7 +86,8 @@ def register_handlers():
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("reload", reload))
     application.add_handler(CommandHandler("ask", ask))
-
+    application.add_handler(CommandHandler("log_out", log_out))
+    application.add_handler(CommandHandler("log_in", log_in))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 register_handlers()
 # Webhook эндпоинт для Telegram
