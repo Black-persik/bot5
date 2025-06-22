@@ -147,7 +147,6 @@ async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-
 # Регистрация обработчиков
 def register_handlers():
     application.add_handler(CommandHandler("start", start))
@@ -166,6 +165,8 @@ def register_handlers():
         },
         fallbacks=[]
     ))
+
+register_handlers()
 # Webhook эндпоинт для Telegram
 @app.post("/webhook")
 async def webhook(request: Request):
@@ -183,10 +184,10 @@ async def index():
 @app.on_event("startup")
 async def startup():
     register_handlers()
+    await application.initialize() 
     await application.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
 
 # Для локальной разработки (опционально)
 if __name__ == "__main__":
-    import uvicorn
-    register_handlers()
+    import uvicorn    
     uvicorn.run(app, host="127.0.0.1", port=8000)
