@@ -37,18 +37,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         reply_markup=main_keyboard,
     )
     api_check_user = f"https://swpdb-production.up.railway.app/users/{update.effective_user.id}/"
-        try:
-            async with httpx.AsyncClient(timeout=5) as client:
-                response = await client.get(api_check_user)
-    
-            if response.status_code == 200:
-                await update.message.reply_text(
-                    "Вы уже зарегистрированы!",
-                    reply_markup=main_keyboard,
-                )
-                return ConversationHandler.END
-        except httpx.RequestError:
-            pass  # можно логировать, если нужно
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            response = await client.get(api_check_user)
+
+        if response.status_code == 200:
+            await update.message.reply_text(
+                "Вы уже зарегистрированы!",
+                reply_markup=main_keyboard,
+            )
+            return ConversationHandler.END
+    except httpx.RequestError:
+        pass  # можно логировать, если нужно
     await update.message.reply_text(
         "Пожалуйста, введите ваше имя: ",
         reply_markup=main_keyboard,
