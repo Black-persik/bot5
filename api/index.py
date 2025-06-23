@@ -235,12 +235,6 @@ async def on_shutdown():
     await application.bot.delete_webhook()
     await application.shutdown()
 
-@app.post("/webhook")
-async def webhook(request: Request):
-    data = await request.json()
-    update = Update.de_json(data, application.bot)
-    await application.process_update(update)
-    return {"ok": True}
 
 @app.get("/")
 async def index():
