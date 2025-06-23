@@ -18,13 +18,8 @@ from datetime import timezone
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Используйте переменные окружения Vercel
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")   # URL вашего Vercel приложения
 
-application = (
-    Application.builder()
-    .token(TOKEN)
-    .updater(None)
-    .concurrent_updates(True)  # Для параллельной обработки
-    .build()
-)
+application = Application.builder().token(TOKEN).build()
+
 # Клавиатура для главного меню
 main_keyboard = ReplyKeyboardMarkup(
     [["/ask", "/help"]],
