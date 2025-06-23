@@ -209,7 +209,7 @@ async def webhook(request: Request):
     try:
         if not application._initialized:
             print("⚠️ Инициализируем и запускаем application вручную (cold start)")
-            await application.initialize()
+            await application.run_async()
 
         json_data = await request.json()
         print("📡 Получен update:", json_data)
@@ -229,7 +229,6 @@ async def index():
 # Инициализация при запуске
 @app.on_event("startup")
 async def startup():
-    await application.initialize()
     await application.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
 
 @app.on_event("shutdown")
