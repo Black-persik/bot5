@@ -1,5 +1,6 @@
+from contextlib import asynccontextmanager
+
 import httpx
-import requests
 
 from fastapi import FastAPI, Request
 from telegram import Update, ReplyKeyboardMarkup
@@ -14,7 +15,6 @@ import os
 from datetime import timezone
 
 
-app = FastAPI()
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Используйте переменные окружения Vercel
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")   # URL вашего Vercel приложения
 
@@ -45,15 +45,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     )
     api_check_user = f"https://swpdb-production.up.railway.app/users/{update.effective_user.id}/"
     try:
-        response = requests.get(api_check_user, timeout=5)
+        async with httpx.AsyncClient(timeout=5) as client:
+            response = await client.get(api_check_user)
+
         if response.status_code == 200:
             await update.message.reply_text(
                 "Вы уже зарегистрированы!",
                 reply_markup=main_keyboard,
             )
             return ConversationHandler.END
-    except requests.exceptions.RequestException:
-        pass
+    except httpx.RequestError:
+        pass  # можно логировать, если нужно
+
     await update.message.reply_text(
         "Пожалуйста, введите ваше имя: ",
         reply_markup=main_keyboard,
@@ -76,8 +79,7 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             json={
                 "_id": update.effective_user.id,
                 "name": update.message.text
-            },
-            timeout=30.0
+            }
         )
     # if response_name.status_code == 200:
     #     print("yra")
@@ -105,12 +107,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
         reply_markup=main_keyboard,
     )
-
-
-
-
-
-
 
 WAITING_MESSAGE = 1
 async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -159,8 +155,7 @@ async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
                     "time" : "2025-06-22T19:52:30.467Z"
                 }
             ]
-        },
-        timeout=30.0
+        }
         )
     response_create_conv_json = response.json()
     context.user_data['conv_id'] = response_create_conv_json.get("_id")
@@ -183,8 +178,8 @@ async def ask_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     async with httpx.AsyncClient() as client:
         response_message = await client.post(
             f"https://swpdb-production.up.railway.app/conversations/{context.user_data['conv_id']}/messages",
-            json=payload_add_message,
-            timeout=30.0
+            json=payload_add_message
+
         )
     #response_add_message = requests.post(api_add_message, json=payload_add_message)
     # if response_add_message.status_code == 200:
@@ -233,12 +228,13 @@ def register_handlers():
 
 register_handlers()
 # Webhook эндпоинт для Telegram
+
+app = FastAPI()
+
 @app.post("/webhook")
 async def webhook(request: Request):
     try:
-        if not application._initialized:
-            print("⚠️ Инициализируем и запускаем application вручную (cold start)")
-            await application.initialize()
+
 
         json_data = await request.json()
         print("📡 Получен update:", json_data)
@@ -267,16 +263,6 @@ async def on_shutdown():
     await application.bot.delete_webhook()
     await application.shutdown()
 
-@app.post("/webhook")
-async def webhook(request: Request):
-    data = await request.json()
-    update = Update.de_json(data, application.bot)
-    await application.process_update(update)
-    return {"ok": True}
-
-@app.get("/")
-async def index():
-    return {"message": "Bot is running"}
 
 # # Для локальной разработки (опционально)
 # if __name__ == "__main__":
