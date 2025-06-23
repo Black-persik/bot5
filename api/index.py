@@ -238,9 +238,6 @@ async def on_shutdown():
     await application.shutdown()
 
 
-@app.get("/")
-async def index():
-    return {"message": "Bot is running"}
 
 # # Для локальной разработки (опционально)
 # if __name__ == "__main__":
