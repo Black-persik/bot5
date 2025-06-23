@@ -29,6 +29,7 @@ main_keyboard = ReplyKeyboardMarkup(
 
 START, GET_NAME = range(2)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    context.user_data.clear()
     await update.message.reply_text(
         "Привет! Я первая версия бота для нашего супер проекта про рекомендательные системы",
 
@@ -36,12 +37,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         reply_markup=main_keyboard,
     )
     api_check_user = f"https://swpdb-production.up.railway.app/users/{update.effective_user.id}/"
-    if requests.get(api_check_user).status_code == 200:
-        await update.message.reply_text(
-            "Вы уже зарегистрированы!",
-            reply_markup=main_keyboard,
-        )
-        return ConversationHandler.END
+    try:
+        response = requests.get(api_check_user, timeout=5)
+        if response.status_code == 200:
+            await update.message.reply_text(
+                "Вы уже зарегистрированы!",
+                reply_markup=main_keyboard,
+            )
+            return ConversationHandler.END
+    except requests.exceptions.RequestException:
+        pass
     await update.message.reply_text(
         "Пожалуйста, введите ваше имя: ",
         reply_markup=main_keyboard,
@@ -86,8 +91,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await update.message.reply_text(
         "Доступные команды:\n"
         "/ask - задать вопрос\n"
-        "/help - основные правила пользования ботом\n"
-        "/reload - обновить чат\n",
+        "/help - основные правила пользования ботом\n",
+    
         reply_markup=main_keyboard,
     )
 
