@@ -11,7 +11,7 @@ from telegram.ext import (
 )
 import os
 from datetime import timezone
-
+import httpx
 
 app = FastAPI()
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Используйте переменные окружения Vercel
@@ -37,16 +37,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         reply_markup=main_keyboard,
     )
     api_check_user = f"https://swpdb-production.up.railway.app/users/{update.effective_user.id}/"
-    try:
-        response = requests.get(api_check_user, timeout=5)
+        try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            response = await client.get(api_check_user)
+
         if response.status_code == 200:
             await update.message.reply_text(
                 "Вы уже зарегистрированы!",
                 reply_markup=main_keyboard,
             )
             return ConversationHandler.END
-    except requests.exceptions.RequestException:
-        pass
+    except httpx.RequestError:
+        pass  # можно логировать, если нужно
     await update.message.reply_text(
         "Пожалуйста, введите ваше имя: ",
         reply_markup=main_keyboard,
