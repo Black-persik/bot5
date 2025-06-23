@@ -1,3 +1,4 @@
+import httpx
 import requests
 
 from fastapi import FastAPI, Request
@@ -17,7 +18,13 @@ app = FastAPI()
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Используйте переменные окружения Vercel
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")   # URL вашего Vercel приложения
 
-application = Application.builder().token(TOKEN).build()
+application = (
+    Application.builder()
+    .token(TOKEN)
+    .updater(None)
+    .concurrent_updates(True)  # Для параллельной обработки
+    .build()
+)
 # Клавиатура для главного меню
 main_keyboard = ReplyKeyboardMarkup(
     [["/ask", "/help"]],
@@ -63,12 +70,15 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         f"Отлично, {user_name}! Теперь вы можете пользоваться ботом.",
         reply_markup=main_keyboard,
     )
-    payload_name_json = {
-        "_id" : update.effective_user.id,
-        "name" : user_name,
-    }
-    api_create_user = "https://swpdb-production.up.railway.app/users/"
-    response_name = requests.post(api_create_user, json=payload_name_json)
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://swpdb-production.up.railway.app/users/",
+            json={
+                "_id": update.effective_user.id,
+                "name": update.message.text
+            },
+            timeout=30.0
+        )
     # if response_name.status_code == 200:
     #     print("yra")
     # else:
@@ -92,7 +102,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "Доступные команды:\n"
         "/ask - задать вопрос\n"
         "/help - основные правила пользования ботом\n",
-    
+
         reply_markup=main_keyboard,
     )
 
@@ -115,28 +125,44 @@ async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         "Напишите свой запрос! Я постараюсь помочь вам!",
         reply_markup=ask_keyboard
     )
-    api_create_conv = "https://swpdb-production.up.railway.app/conversations/"
+    # api_create_conv = "https://swpdb-production.up.railway.app/conversations/"
     #api_get_user = f"https://swpdb-production.up.railway.app/users/{update.effective_user.id}/"
     # response_get_name = requests.get(api_create_conv)
-    # response_name = response_get_name.json().get("name")
-    payload_create_conv = {
-        "user_id": update.effective_user.id,
-        "messages": [
-            {
-                "sender" : "user",
-                "text" : "STARTING_MESSAGE",
-                "time" : "2025-06-22T19:52:30.467Z"
-            }
-        ]
-    }
+    # # response_name = response_get_name.json().get("name")
+    # payload_create_conv = {
+    #     "user_id": update.effective_user.id,
+    #     "messages": [
+    #         {
+    #             "sender" : "user",
+    #             "text" : "STARTING_MESSAGE",
+    #             "time" : "2025-06-22T19:52:30.467Z"
+    #         }
+    #     ]
+    # }
     #update.message.date.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-    response_create_conv = requests.post(api_create_conv, json=payload_create_conv)
+    #response_create_conv = requests.post(api_create_conv, json=payload_create_conv)
     # if response_create_conv.status_code == 200:
     #     print("yra")
     # else:
     #     print("no")
     #     print(response_create_conv.text)
-    response_create_conv_json = response_create_conv.json()
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://swpdb-production.up.railway.app/conversations/",
+            json={
+                "user_id": update.effective_user.id,
+                "messages": [
+                    {
+                    "sender" : "user",
+                    "text" : "STARTING_MESSAGE",
+                    "time" : "2025-06-22T19:52:30.467Z"
+                }
+            ]
+        },
+        timeout=30.0
+        )
+    response_create_conv_json = response.json()
     context.user_data['conv_id'] = response_create_conv_json.get("_id")
 
     return WAITING_MESSAGE
@@ -154,7 +180,13 @@ async def ask_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         "text" : user_text,
         "time" : update.message.date.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
     }
-    response_add_message = requests.post(api_add_message, json=payload_add_message)
+    async with httpx.AsyncClient() as client:
+        response_message = await client.post(
+            f"https://swpdb-production.up.railway.app/conversations/{context.user_data['conv_id']}/messages",
+            json=payload_add_message,
+            timeout=30.0
+        )
+    #response_add_message = requests.post(api_add_message, json=payload_add_message)
     # if response_add_message.status_code == 200:
     #     print("yra")
     # else:
