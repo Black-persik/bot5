@@ -48,6 +48,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             )
             return ConversationHandler.END
     except httpx.RequestError:
+        print("ошибка на самом деле")
         pass  # можно логировать, если нужно
     await update.message.reply_text(
         "Пожалуйста, введите ваше имя: ",
