@@ -6,13 +6,11 @@ from telegram.ext import (
     MessageHandler,
     filters,
     ContextTypes,
-    CallbackQueryHandler,
     ConversationHandler
 )
 import logging
-import asyncio
 import requests
-from datetime import datetime, timezone
+from datetime import timezone
 from typing import Optional
 import os
 
@@ -29,7 +27,7 @@ app = FastAPI()
 # Конфигурация бота
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Используйте переменные окружения Vercel
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-WEBHOOK_PATH = "/webhook"
+
 application = Application.builder().token(TOKEN).build()
 
 # Клавиатура для главного меню
@@ -156,7 +154,7 @@ async def ask_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     return WAITING_MESSAGE
 
 
-def register_handlers(application):
+def register_handlers():
     application.add_handler(CommandHandler("help", help_command))
 
     conv_handler_start = ConversationHandler(
@@ -186,7 +184,7 @@ register_handlers()
 @app.post("/webhook")
 async def webhook(request: Request):
     try:
-        if not application._initialized:
+        if not application.initialized:
             print("⚠️ Инициализируем и запускаем application вручную (cold start)")
             await application.initialize()
 
