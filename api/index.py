@@ -184,7 +184,7 @@ register_handlers()
 @app.post("/webhook")
 async def webhook(request: Request):
     try:
-        if not application.initialized:
+        if not application._initialized:
             print("⚠️ Инициализируем и запускаем application вручную (cold start)")
             await application.initialize()
 
