@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -30,6 +30,7 @@ app = FastAPI()
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Используйте переменные окружения Vercel
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 WEBHOOK_PATH = "/webhook"
+application = Application.builder().token(TOKEN).build()
 
 # Клавиатура для главного меню
 main_keyboard = ReplyKeyboardMarkup(
@@ -180,39 +181,49 @@ def register_handlers(application):
     application.add_handler(conv_handler_start)
     application.add_handler(conv_handler_ask)
 
+register_handlers()
+# Webhook эндпоинт для Telegram
+@app.post("/webhook")
+async def webhook(request: Request):
+    try:
+        if not application._initialized:
+            print("⚠️ Инициализируем и запускаем application вручную (cold start)")
+            await application.initialize()
 
-async def setup_bot():
-    """Настройка и запуск бота"""
-    global bot_application
+        json_data = await request.json()
+        print("📡 Получен update:", json_data)
+        update = Update.de_json(json_data, application.bot)
+        await application.process_update(update)
+        return {"status": "ok"}
 
-    bot_application = Application.builder().token(TOKEN).build()
-    register_handlers(bot_application)
+    except Exception as e:
+        print("❌ Ошибка при обработке webhook:", str(e))
+        return {"status": "error", "message": str(e)}
 
-    # Настройка вебхука
-    await bot_application.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
+# Эндпоинт для проверки работоспособности
+@app.get("/")
+async def index():
+    return {"message": "Bot is running"}
 
-    logger.info("Бот инициализирован и готов к работе")
+# Инициализация при запуске
+@app.on_event("startup")
+async def startup():
+    await application.initialize()
+    await application.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
 
-
-@app.get("/init-bot")
-async def on_startup():
-    """Запуск бота при старте FastAPI"""
-    await setup_bot()
-
+@app.on_event("shutdown")
+async def on_shutdown():
+    # удаляем вебхук и чисто останавливаем бота
+    await application.bot.delete_webhook()
+    await application.shutdown()
 
 @app.post("/webhook")
-async def webhook(update: dict):
-    """Обработка вебхуков от Telegram"""
-    global bot_application
-    if bot_application is None:
-        return {"status": "error", "message": "Bot not initialized"}
-
-    telegram_update = Update.de_json(update, bot_application.bot)
-    await bot_application.process_update(telegram_update)
-    return {"status": "ok"}
-
+async def webhook(request: Request):
+    data = await request.json()
+    update = Update.de_json(data, application.bot)
+    await application.process_update(update)
+    return {"ok": True}
 
 @app.get("/")
-async def root():
-    """Проверка работоспособности сервера"""
-    return {"status": "running", "bot": "active"}
+async def index():
+    return {"message": "Bot is running"}
