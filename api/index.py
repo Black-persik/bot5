@@ -11,8 +11,9 @@ from telegram.ext import (
 import logging
 import requests
 from datetime import timezone
-from typing import Optional
+from typing_extensions import Optional, AsyncGenerator
 import os
+from contextlib import asynccontextmanager
 
 # Настройка логирования
 logging.basicConfig(
@@ -21,8 +22,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Инициализация FastAPI
-app = FastAPI()
 
 # Конфигурация бота
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Используйте переменные окружения Vercel
@@ -180,48 +179,41 @@ def register_handlers():
     application.add_handler(conv_handler_ask)
 
 register_handlers()
-# Webhook эндпоинт для Telegram
-@app.post("/webhook")
-async def webhook(request: Request):
-    try:
-        if not application._initialized:
-            print("⚠️ Инициализируем и запускаем application вручную (cold start)")
-            await application.initialize()
 
-        json_data = await request.json()
-        print("📡 Получен update:", json_data)
-        update = Update.de_json(json_data, application.bot)
-        await application.process_update(update)
-        return {"status": "ok"}
-
-    except Exception as e:
-        print("❌ Ошибка при обработке webhook:", str(e))
-        return {"status": "error", "message": str(e)}
-
-# Эндпоинт для проверки работоспособности
-@app.get("/")
-async def index():
-    return {"message": "Bot is running"}
-
-# Инициализация при запуске
-@app.on_event("startup")
-async def startup():
+@asynccontextmanager
+async def lifespan(fastapi_app: FastAPI)->AsyncGenerator[None, None]:
+    logger.info("🌱 Запуск lifespan: инициализация бота")
+    register_handlers()
     await application.initialize()
     await application.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
+    logger.info("✅ Вебхук установлен")
 
-@app.on_event("shutdown")
-async def on_shutdown():
-    # удаляем вебхук и чисто останавливаем бота
+    yield  # 🔁 Тут происходит выполнение приложения
+
+    logger.info("🌒 Завершение lifespan: удаляем вебхук и завершаем")
     await application.bot.delete_webhook()
     await application.shutdown()
+    logger.info("✅ Завершено")
+
+
+
+# Инициализация FastAPI
+app = FastAPI(lifespan=lifespan)
+
 
 @app.post("/webhook")
-async def webhook(request: Request):
-    data = await request.json()
-    update = Update.de_json(data, application.bot)
-    await application.process_update(update)
-    return {"ok": True}
+async def telegram_webhook(request: Request):
+    try:
+        data = await request.json()
+        update = Update.de_json(data, application.bot)
+        await application.process_update(update)
+        return {"ok": True}
+    except Exception as e:
+        logger.exception("❌ Ошибка в webhook обработке")
+        return {"ok": False, "error": str(e)}
 
+# Проверка работоспособности
 @app.get("/")
 async def index():
-    return {"message": "Bot is running"}
+    return {"message": "Bot is running", "webhook": f"{WEBHOOK_URL}/webhook"}
+
