@@ -194,7 +194,7 @@ async def setup_bot():
     logger.info("Бот инициализирован и готов к работе")
 
 
-@app.on_event("startup")
+@app.get("/init-bot")
 async def on_startup():
     """Запуск бота при старте FastAPI"""
     await setup_bot()
